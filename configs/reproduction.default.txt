@@ -1,0 +1,46 @@
+# FairProjection + LightGBM — cấu hình dùng chung cho DRUG/CRIME
+# Định dạng: key=value # nguồn/trạng thái. Parser bỏ qua dòng trống và phần sau dấu #.
+#
+# Chú thích nhãn:
+# [THAM KHẢO — paper] = được nêu trực tiếp trong paper được trích dẫn.
+# [XÁC MINH — repo gốc] = đã kiểm tra trong mã/repository gốc; không đồng nghĩa paper quy định.
+# [THEO TASK] = yêu cầu của lát cắt thực nghiệm được giao.
+# [CHỜ CHỐT — nhóm] = chưa có nguồn bắt buộc; nhóm phải chốt trước run full và lưu quyết định vào manifest.json.
+
+run_name=fairprojection-lightgbm-drug-crime # [THEO TASK] Nhánh artifact; baseline khác do task khác tạo.
+
+datasets.DRUG.n_classes=4 # [THEO TASK] [CHỜ CHỐT — nhóm] Chốt mapping label và sensitive attribute.
+datasets.CRIME.n_classes=5 # [THEO TASK] [CHỜ CHỐT — nhóm] Chốt mapping label và sensitive attribute.
+
+base_estimator.name=lightgbm # [THEO TASK]
+tuning.method=randomized_search # [THAM KHẢO — paper §4.3.2, p.18]
+tuning.cv=3 # [THAM KHẢO — paper §4.3.2, p.18]
+tuning.n_iter=50 # [CHỜ CHỐT — nhóm] Paper không nêu n_iter; 50 chỉ là default đề xuất.
+tuning.scoring=accuracy # [CHỜ CHỐT — nhóm] Paper không nêu scorer; Macro-F1 là metric báo cáo.
+tuning.stratified=true # [CHỜ CHỐT — nhóm]
+tuning.random_state=seed # [CHỜ CHỐT — nhóm] Thay "seed" bằng seed của cell thí nghiệm hiện tại.
+tuning.reg_alpha=0,0.1,1,2,5,10,20,50 # [THAM KHẢO — paper §4.3.2, p.18]
+tuning.reg_lambda=0,0.1,1,2,5,10,20,50 # [THAM KHẢO — paper §4.3.2, p.18]
+tuning.n_estimators=10:200 # [THAM KHẢO — paper §4.3.2, p.18; phạm vi số nguyên bao gồm hai đầu]
+tuning.num_leaves=6:50 # [THAM KHẢO — paper §4.3.2, p.18; phạm vi số nguyên bao gồm hai đầu]
+tuning.max_depth=2:16 # [THAM KHẢO — paper §4.3.2, p.18; phạm vi số nguyên bao gồm hai đầu]
+tuning.min_child_samples=10:100 # [THAM KHẢO — paper §4.3.2, p.18; phạm vi số nguyên bao gồm hai đầu]
+
+fairprojection.constraint=sp # [THEO TASK] Statistical Parity.
+fairprojection.divergence=cross-entropy # [THEO TASK] Biến thể bắt buộc cho nhánh này.
+fairprojection.alpha=0,0.1,0.2,0.5,0.75 # [THAM KHẢO — paper §4.3.3]
+fairprojection.rho=2 # [XÁC MINH — repo gốc] Adapter phải xác nhận giá trị được truyền vào lõi.
+fairprojection.max_iter=500 # [XÁC MINH — repo gốc] Adapter phải xác nhận giá trị được truyền vào lõi.
+fairprojection.projection_method=tf # [XÁC MINH — repo gốc] Adapter phải xác nhận giá trị được truyền vào lõi.
+# Không thêm threshold/tune_threshold: dự đoán đa lớp dùng argmax(projected_proba).
+# Không thêm zeta, solver_tolerance hoặc use_protected trước khi adapter/lõi hỗ trợ và log chúng.
+
+experiment.pilot_seeds=0,1,2,3,4 # [THEO TASK]
+experiment.full_seeds=0:29 # [THEO TASK; phạm vi số nguyên bao gồm hai đầu]
+experiment.split.train=0.6 # [CHỜ CHỐT — nhóm] Default đề xuất, không suy ra từ paper/repo.
+experiment.split.calibration=0.2 # [CHỜ CHỐT — nhóm] Default đề xuất, không suy ra từ paper/repo.
+experiment.split.test=0.2 # [CHỜ CHỐT — nhóm] Default đề xuất, không suy ra từ paper/repo.
+experiment.fail_fast=false # [CHỜ CHỐT — nhóm] Solver cell ghi lỗi rồi tiếp tục; lỗi preflight/data/config phải dừng.
+
+# [CHỜ CHỐT — nhóm] Định nghĩa và version: dp_unfairness, fp_constraint_residual,
+# target_violation, mapping label/sensitive attribute và hành vi parser config runtime.
