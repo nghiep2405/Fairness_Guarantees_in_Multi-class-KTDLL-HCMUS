@@ -16,29 +16,53 @@ from typing import Any
 import numpy as np
 
 
-def check_fair_projection_dependencies() -> dict[str, str]:
+def ensure_fair_projection_runtime(method: str = "tf") -> dict[str, Any]:
+    """Validate process-wide requirements before starting a projection."""
+    if method not in {"tf", "np"}:
+        raise ValueError("FairProjection method must be 'tf' or 'np'.")
+    if method == "np":
+        return {"method": method, "tensorflow_eager_enabled": None}
+    import tensorflow
+
+    eager_enabled = bool(tensorflow.executing_eagerly())
+    if not eager_enabled:
+        raise RuntimeError(
+            "FairProjection method='tf' requires TensorFlow eager execution, but "
+            "eager mode is disabled in this process. Restart the notebook kernel "
+            "and run AIF360 through the isolated subprocess; or select method='np'."
+        )
+    return {"method": method, "tensorflow_eager_enabled": eager_enabled}
+
+
+def check_fair_projection_dependencies(method: str = "tf") -> dict[str, Any]:
     """Import the solver stack once and fail before an expensive experiment."""
     try:
         import cvxpy
         import scipy
-        import tensorflow
         import tqdm
         from third_party.fair_projection.GroupFair import GFair
+        if method == "tf":
+            import tensorflow
     except ImportError as exc:
+        tensorflow_requirement = "tensorflow, " if method == "tf" else ""
         raise ImportError(
-            "FairProjection requires tensorflow, cvxpy, scipy and tqdm. "
+            f"FairProjection method={method!r} requires "
+            f"{tensorflow_requirement}cvxpy, scipy and tqdm. "
             f"The active notebook kernel is {sys.executable!r}. Select the "
             "'Python (KTDLL Fairness)' kernel, or install into the active kernel "
             f"with: \"{sys.executable}\" -m pip install tensorflow cvxpy scipy tqdm. "
-            "See instruction_run.md."
+            "See README.md."
         ) from exc
     del GFair
-    return {
-        "tensorflow": tensorflow.__version__,
+    versions = {
         "cvxpy": cvxpy.__version__,
         "scipy": scipy.__version__,
         "tqdm": tqdm.__version__,
     }
+    if method == "tf":
+        versions["tensorflow"] = tensorflow.__version__
+    versions.update(ensure_fair_projection_runtime(method))
+    return versions
 
 
 @dataclass(frozen=True)
@@ -134,6 +158,7 @@ class FairProjectionAdapter:
         self._fit_diagnostics = None
 
     def fit(self, X_train, y_train, sensitive_train, X_calibration, sensitive_calibration):
+        ensure_fair_projection_runtime(self.config.method)
         X_train = _as_feature_matrix(X_train, "X_train")
         X_calibration = _as_feature_matrix(X_calibration, "X_calibration")
         y_train = _as_vector(y_train, "y_train").astype(int)

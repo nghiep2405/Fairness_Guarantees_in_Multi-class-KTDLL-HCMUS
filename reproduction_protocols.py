@@ -617,6 +617,9 @@ class BinaryProtocolConfig:
     fairlearn_tolerances: tuple = (0.0001, 0.5, 1.0, 2.5, 5.0, 10.0)
     nn_epsilons: tuple = (0.01, 0.1, 0.3, 0.5, 0.9)
     adversarial_weights: tuple = (0.01, 0.1, 0.5, 0.9, 1.0)
+    adversarial_num_epochs: int = 200
+    adversarial_batch_size: int = 128
+    adversarial_hidden_units: int = 50
     tuning_n_iter: int = 20
     cv_folds: int = 3
     run_adversarial: bool = True
@@ -847,22 +850,11 @@ def _run_binary_neural_baselines(
     postprocess_fn,
     config,
 ):
-    import tensorflow.compat.v1 as tf
-    from aif360.algorithms.inprocessing import AdversarialDebiasing
-    from aif360.datasets import BinaryLabelDataset
+    from fairness_baselines.aif360_subprocess import (
+        AIF360AdversarialConfig,
+        run_aif360_adversarial_subprocess,
+    )
     from sklearn.neural_network import MLPClassifier
-
-    def as_aif360(X, y, sensitive):
-        frame = pd.DataFrame(X)
-        frame["label"] = y
-        frame["sensitive_attr"] = np.where(sensitive == -1, 0, 1)
-        return BinaryLabelDataset(
-            df=frame,
-            label_names=["label"],
-            protected_attribute_names=["sensitive_attr"],
-            favorable_label=1,
-            unfavorable_label=0,
-        )
 
     records = []
     model = MLPClassifier(
@@ -913,31 +905,23 @@ def _run_binary_neural_baselines(
             )
         )
 
-    tf.disable_eager_execution()
-    training = as_aif360(X_train, y_train, S_train)
-    testing = as_aif360(X_test, y_test, S_test)
     for weight_index, weight in enumerate(config.adversarial_weights):
-        tf.reset_default_graph()
-        tf.set_random_seed(seed + weight_index)
-        session = tf.Session()
-        try:
-            adversarial = AdversarialDebiasing(
-                privileged_groups=[{"sensitive_attr": 1}],
-                unprivileged_groups=[{"sensitive_attr": 0}],
-                scope_name=f"adv_{dataset_name}_{repetition}_{weight_index}",
-                debias=True,
-                sess=session,
-                num_epochs=200,
-                batch_size=128,
-                classifier_num_hidden_units=50,
+        result = run_aif360_adversarial_subprocess(
+            X_train,
+            y_train,
+            S_train,
+            X_test,
+            y_test,
+            S_test,
+            AIF360AdversarialConfig(
                 adversary_loss_weight=weight,
-            )
-            started = time.perf_counter()
-            adversarial.fit(training)
-            prediction = adversarial.predict(testing).labels.ravel()
-            runtime = time.perf_counter() - started
-        finally:
-            session.close()
+                seed=seed + weight_index,
+                scope_name=f"adv_{dataset_name}_{repetition}_{weight_index}",
+                num_epochs=config.adversarial_num_epochs,
+                batch_size=config.adversarial_batch_size,
+                hidden_units=config.adversarial_hidden_units,
+            ),
+        )
         records.append(
             _binary_record(
                 dataset_name,
@@ -945,10 +929,10 @@ def _run_binary_neural_baselines(
                 seed,
                 "NN",
                 "Fair-adversarial",
-                prediction,
+                result.prediction,
                 y_test,
                 S_test,
-                runtime,
+                result.runtime_seconds,
                 adversarial_weight=weight,
             )
         )

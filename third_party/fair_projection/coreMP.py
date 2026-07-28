@@ -115,8 +115,12 @@ def admm(G,y,rho=2,div = 'kl', tol = 1e-6, max_iter = 1000,report=False):
         # TODO: raise error if divergence not listed
             
         ### Step 2: lambda update ###
-        d_cp.value = tf.reduce_sum( G_t @ (mu + rho*v),axis=0).numpy()/n # linear part
+        d_cp.value = np.sum(G_t @ (mu + rho*v), axis=0)/n # linear part
         prob.solve(warm_start=True)
+        if prob.status not in {cp.OPTIMAL, cp.OPTIMAL_INACCURATE} or l_cp.value is None:
+            raise RuntimeError(
+                f"FairProjection NumPy ADMM solver failed with status {prob.status!r}."
+            )
         
         l_old = l
              
@@ -169,6 +173,12 @@ def admm_tf(G,y,rho=2,div = 'kl', max_iter = 1000, eps1=1e-7, eps2=1e-2, eps3=1e
         - l (k x 1 np.array): optimal dual parameter lambda
     '''
     
+    if not tf.executing_eagerly():
+        raise RuntimeError(
+            "FairProjection method='tf' requires TensorFlow eager execution. "
+            "Run AIF360 graph-mode baselines in the isolated subprocess."
+        )
+
     n,c,k = G.shape
     reg = 1 / np.sqrt(n)
 
@@ -297,6 +307,10 @@ def admm_tf(G,y,rho=2,div = 'kl', max_iter = 1000, eps1=1e-7, eps2=1e-2, eps3=1e
         # ### Step 2: lambda update ###
         d_cp.value = tf.reduce_sum( tf.linalg.matmul(G_tf, (mu_tf + rho*v_tf),transpose_a=True ),axis=0).numpy()/n # linear part ## rho -> rho+reg?
         prob.solve(warm_start=True)
+        if prob.status not in {cp.OPTIMAL, cp.OPTIMAL_INACCURATE} or l_cp.value is None:
+            raise RuntimeError(
+                f"FairProjection TensorFlow ADMM solver failed with status {prob.status!r}."
+            )
         l_tf.assign(l_cp.value) # assign value to tensorflow variable
 
         ### Step 3: mu update ###

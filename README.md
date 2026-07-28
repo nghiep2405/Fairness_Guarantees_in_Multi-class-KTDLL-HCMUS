@@ -85,7 +85,7 @@ python -c "import numpy, pandas, scipy, sklearn, lightgbm, fairlearn, tensorflow
 Chạy unit test trước khi thực hiện các thí nghiệm:
 
 ```bash
-python -m unittest tests.test_reproduction_protocols -v
+python -m unittest tests.test_reproduction_protocols tests.test_fair_projection_runtime -v
 ```
 
 Các test phải kết thúc với trạng thái `OK`.
@@ -208,6 +208,14 @@ dependency khi so sánh kết quả.
   dùng kết quả smoke test trong báo cáo.
 - Full multi-class run dùng Statistical Parity, cross-entropy,
   `alpha={0,0.1,0.2,0.5,0.75}`, `rho=2`, `max_iter=500`.
+- Backend mặc định `method="tf"` cần TensorFlow eager mode. Runner kiểm tra điều
+  kiện này trước khi chạy ADMM và báo lỗi có hướng xử lý nếu kernel đã bị chuyển
+  sang graph mode.
+- AIF360 AdversarialDebiasing chạy trong một Python subprocess riêng vì baseline
+  này cần TensorFlow v1 graph mode. Do đó chạy binary experiment trước không còn
+  vô hiệu hóa eager mode của FairProjection trong multi-class experiment.
+- Có thể đặt `fair_projection_method="np"` để dùng fallback NumPy/CVXPY. Đường
+  chạy này không import TensorFlow.
 
 # Fair-transport
 - Mã nguồn tham khảo:

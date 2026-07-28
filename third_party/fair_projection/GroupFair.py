@@ -2,9 +2,9 @@ import numpy as np
 import sys
 sys.path.insert(1, '../code/')
 try:
-    from . import coreMP as MP
+    from . import coreNP as NP
 except ImportError:  # Preserve direct-script compatibility with the upstream layout.
-    import coreMP as MP
+    import coreNP as NP
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 
@@ -257,9 +257,13 @@ class GFair:
         Py_x = (Py_x+fudge)/((Py_x+fudge).sum(axis=1,keepdims=True))
 
         if method == 'tf':
+            try:
+                from . import coreMP as MP
+            except ImportError:
+                import coreMP as MP
             self.l = MP.admm_tf(G, np.expand_dims(Py_x,axis=2),rho=rho,max_iter=max_iter,div=self.div, verbose=verbose)
         elif method == 'np':
-            self.l = MP.admm(G, np.expand_dims(Py_x, axis=2), rho=rho, max_iter=max_iter, report=True, div=self.div)
+            self.l = NP.admm(G, np.expand_dims(Py_x, axis=2), rho=rho, max_iter=max_iter, report=True, div=self.div)
         else:
             print('Method can only be either tf or np!!!')
             return
@@ -285,6 +289,6 @@ class GFair:
         
         # print('...Predicting...')
         
-        return MP.predict(self.l, G, np.expand_dims(Py_x,axis=2),div=self.div)
+        return NP.predict(self.l, G, np.expand_dims(Py_x,axis=2),div=self.div)
         
         

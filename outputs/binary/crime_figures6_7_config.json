@@ -32,6 +32,9 @@
       0.9,
       1.0
     ],
+    "adversarial_num_epochs":200,
+    "adversarial_batch_size":128,
+    "adversarial_hidden_units":50,
     "tuning_n_iter":20,
     "cv_folds":3,
     "run_adversarial":true,
