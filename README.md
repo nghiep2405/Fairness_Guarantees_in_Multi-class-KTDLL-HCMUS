@@ -107,7 +107,8 @@ tiếp khi chạy từ thư mục gốc repository.
 Toàn bộ lệnh dưới đây cần được chạy tại thư mục gốc của repository. Khuyến nghị
 dùng Python 3.13, là phiên bản đã được kiểm tra với mã nguồn hiện tại.
 
-## 1. Cài đặt trên Windows
+## 1. Cài đặt thư viện
+### 1.1 Cài đặt trên Windows
 
 Mở PowerShell tại thư mục repository và tạo môi trường ảo:
 
@@ -139,7 +140,7 @@ python -m pip install numpy==2.5.1 pandas==3.0.5 scipy==1.18.0 matplotlib==3.11.
 python -m ipykernel install --user --name ktdll-fairness --display-name "Python (KTDLL Fairness)"
 ```
 
-## 2. Cài đặt trên Linux
+### 1.2 Cài đặt trên Linux
 
 Các lệnh sau áp dụng cho Bash. Máy cần có Python 3.13 và module `venv`. Trên
 Ubuntu/Debian, nếu chưa có `venv`, cài bằng:
@@ -169,7 +170,7 @@ python -m pip install numpy==2.5.1 pandas==3.0.5 scipy==1.18.0 matplotlib==3.11.
 python -m ipykernel install --user --name ktdll-fairness --display-name "Python (KTDLL Fairness)"
 ```
 
-## 3. Kiểm tra môi trường
+## 2. Kiểm tra môi trường
 
 Kiểm tra các package chính và solver của CVXPY:
 
@@ -185,7 +186,7 @@ python -m unittest tests.test_reproduction_protocols tests.test_fair_projection_
 
 Các test phải kết thúc với trạng thái `OK`.
 
-## 4. Mở và chạy notebook
+## 3. Mở và chạy notebook
 
 Khởi động notebook:
 
@@ -208,7 +209,7 @@ mức tolerance, nên có thể mất nhiều thời gian. Có thể chạy smok
 nghĩa trong notebook trước, kiểm tra kết quả tại `outputs/multiclass_smoke/`, rồi
 mới chạy cấu hình full.
 
-## 5. Kết quả đầu ra
+## 4. Kết quả đầu ra
 
 Các runner tự động lưu kết quả dưới thư mục `outputs/`:
 
@@ -226,7 +227,7 @@ Mỗi protocol lưu:
 - file JSON ghi lại cấu hình;
 - các biểu đồ được sinh bởi protocol tương ứng.
 
-## 6. Solver tùy chọn cho Fair-transport
+## 5. Solver tùy chọn cho Fair-transport
 
 Fair-transport có thể chạy bằng các solver đi kèm CVXPY. Cấu hình `AUTO` ưu tiên:
 
@@ -248,7 +249,7 @@ python -c "import cvxpy as cp; print(cp.installed_solvers())"
 
 Nếu danh sách có `CBC`, chế độ `AUTO` sẽ tự động ưu tiên solver này.
 
-## 7. Xử lý lỗi thường gặp
+## 6. Xử lý lỗi thường gặp
 
 ### Không import được package dù đã cài
 
