@@ -47,6 +47,7 @@ kê tổng hợp.
 .
 ├── experimentation_epsilon_fairness_update.ipynb  # Notebook điều phối thực nghiệm
 ├── reproduction_protocols.py                       # Protocol lặp cho synthetic/binary
+├── reproduction_protocols_same_paper.py            # Vẽ lại Figure 1–3, 6–8, 10 từ CSV có sẵn (giống paper)
 ├── configs/
 │   └── reproduction.default.txt                    # Cấu hình tham khảo cho full run
 ├── datasets/
@@ -66,11 +67,12 @@ kê tổng hợp.
 ├── reference/
 │   ├── epsilon-fairness_draft_arxiv/               # Mã/notebook tham khảo epsilon-fair
 │   └── fair_projection/                            # Script tham khảo FairProjection
-└── outputs/
-    ├── synthetic/                                  # Figures 1–4 và 10
-    ├── binary/                                     # DRUG/CRIME binary, Figures 6–7
-    ├── multiclass_smoke/                           # Kết quả kiểm tra nhanh
-    └── multiclass/                                 # Kết quả multi-class đầy đủ
+├── outputs/
+│   ├── synthetic/                                  # Figures 1–4 và 10
+│   ├── binary/                                     # DRUG/CRIME binary, Figures 6–7
+│   ├── multiclass_smoke/                           # Kết quả kiểm tra nhanh
+│   └── multiclass/                                 # Kết quả multi-class đầy đủ
+└── figures_same_paper/                             # Kết quả thực nghiệm như output nhưng được vẽ giống paper (sử dụng kết quả từ folder output)
 ```
 
 Các thư mục `reference/` và `third_party/` phục vụ hai mục đích khác nhau:
@@ -209,7 +211,47 @@ mức tolerance, nên có thể mất nhiều thời gian. Có thể chạy smok
 nghĩa trong notebook trước, kiểm tra kết quả tại `outputs/multiclass_smoke/`, rồi
 mới chạy cấu hình full.
 
-## 4. Kết quả đầu ra
+## 4. Vẽ lại figure theo định dạng của bài báo
+
+File `reproduction_protocols_same_paper.py` chỉ đọc các file summary CSV đã có
+trong `outputs/`; file không chạy lại thực nghiệm và không thay đổi dữ liệu hoặc
+ảnh hiện có trong thư mục này. Script vẽ Figure 1–3, 6–8 và 10 bằng marker thông
+thường, không vẽ các thanh sai số tạo thành ký hiệu dấu thập. Figure 4 được loại
+trừ theo chủ đích.
+
+Trước khi chạy, cần bảo đảm các kết quả full sau đã tồn tại:
+
+- `outputs/synthetic/*_summary.csv`;
+- `outputs/binary/drug_figures6_7_summary.csv` và
+  `outputs/binary/crime_figures6_7_summary.csv`;
+- `outputs/multiclass/multiclass_summary_results.csv`.
+
+Trên Windows PowerShell, chạy trực tiếp bằng Python trong môi trường `.venv`:
+
+```powershell
+& ".\.venv\Scripts\python.exe" ".\reproduction_protocols_same_paper.py"
+```
+
+Nếu môi trường ảo đã được kích hoạt, hoặc trên Linux/macOS, có thể chạy:
+
+```bash
+python reproduction_protocols_same_paper.py
+```
+
+Mặc định, 9 file PNG mới được lưu trong `figures_same_paper/`:
+
+- `figure1.png`, `figure2.png`, `figure3.png`, `figure10.png`;
+- `drug_figure6.png`, `drug_figure7.png`;
+- `crime_figure6.png`, `crime_figure7.png`;
+- `figure8_multiclass.png`.
+
+Có thể chọn thư mục CSV đầu vào và thư mục ảnh đầu ra khác bằng:
+
+```bash
+python reproduction_protocols_same_paper.py --data-dir outputs --output-dir figures_same_paper
+```
+
+## 5. Kết quả đầu ra
 
 Các runner tự động lưu kết quả dưới thư mục `outputs/`:
 
@@ -227,7 +269,7 @@ Mỗi protocol lưu:
 - file JSON ghi lại cấu hình;
 - các biểu đồ được sinh bởi protocol tương ứng.
 
-## 5. Solver tùy chọn cho Fair-transport
+## 6. Solver tùy chọn cho Fair-transport
 
 Fair-transport có thể chạy bằng các solver đi kèm CVXPY. Cấu hình `AUTO` ưu tiên:
 
@@ -249,7 +291,7 @@ python -c "import cvxpy as cp; print(cp.installed_solvers())"
 
 Nếu danh sách có `CBC`, chế độ `AUTO` sẽ tự động ưu tiên solver này.
 
-## 6. Xử lý lỗi thường gặp
+## 7. Xử lý lỗi thường gặp
 
 ### Không import được package dù đã cài
 
